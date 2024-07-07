@@ -14,91 +14,108 @@ using PdfSharp.Pdf;
 
 class Program
 {
-    static readonly Dictionary<int, (Rgba32 color, char symbol)> DMCColors30 = new()
+    static readonly Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors30 = new()
     {
-        { 3713, (new Rgba32(255, 226, 226), 'A') },
-        { 761, (new Rgba32(255, 201, 201), 'B') },
-        { 760, (new Rgba32(245, 173, 173), 'C') },
-        { 3712, (new Rgba32(241, 135, 135), 'D') },
-        { 3328, (new Rgba32(227, 109, 109), 'E') },
-        { 347, (new Rgba32(191, 45, 45), 'F') },
-        { 817, (new Rgba32(187, 5, 31), 'G') },
-        { 814, (new Rgba32(123, 0, 27), 'H') },
-        { 820, (new Rgba32(14, 54, 92), 'I') },
-        { 939, (new Rgba32(27, 40, 83), 'J') },
-        { 310, (new Rgba32(0, 0, 0), 'K') },
-        { 5200, (new Rgba32(255, 255, 255), 'L') },
-        { 208, (new Rgba32(184, 121, 184), 'M') },
-        { 209, (new Rgba32(204, 132, 204), 'N') },
-        { 210, (new Rgba32(221, 160, 221), 'O') },
-        { 211, (new Rgba32(233, 186, 233), 'P') },
-        { 221, (new Rgba32(136, 62, 62), 'Q') },
-        { 223, (new Rgba32(186, 91, 91), 'R') },
-        { 224, (new Rgba32(255, 223, 213), 'S') },
-        { 225, (new Rgba32(255, 227, 227), 'T') },
-        { 300, (new Rgba32(111, 47, 0), 'U') },
-        { 301, (new Rgba32(179, 95, 43), 'V') },
-        { 302, (new Rgba32(255, 111, 79), 'W') },
-        { 307, (new Rgba32(255, 243, 85), 'X') },
-        { 309, (new Rgba32(111, 35, 42), 'Y') },
-        { 311, (new Rgba32(32, 55, 125), 'Z') },
-        { 312, (new Rgba32(42, 74, 137), 'a') },
-        { 315, (new Rgba32(129, 58, 62), 'b') },
-        { 316, (new Rgba32(183, 115, 127), 'c') },
-        { 317, (new Rgba32(198, 198, 198), 'd') }
+        { 5200, (new Rgba32(255, 255, 255), 'A', "White") },
+        { 150, (new Rgba32(207, 19, 19), 'B', "Red - BRIGHT") },
+        { 310, (new Rgba32(0, 0, 0), 'C', "Black") },
+        { 730, (new Rgba32(130, 120, 56), 'D', "Olive Green - VY DK") },
+        { 732, (new Rgba32(134, 126, 54), 'E', "Olive Green") },
+        { 740, (new Rgba32(255, 131, 19), 'F', "Tangerine") },
+        { 742, (new Rgba32(255, 211, 118), 'G', "Tangerine - LT") },
+        { 743, (new Rgba32(255, 224, 150), 'H', "Yellow - MED") },
+        { 745, (new Rgba32(255, 233, 173), 'I', "Yellow - LT PALE") },
+        { 823, (new Rgba32(31, 30, 51), 'J', "Blue - DK") },
+        { 826, (new Rgba32(51, 91, 128), 'K', "Blue - MED") },
+        { 600, (new Rgba32(222, 36, 61), 'L', "Cranberry - VY DK") },
+        { 603, (new Rgba32(255, 164, 182), 'M', "Cranberry") },
+        { 606, (new Rgba32(250, 50, 3), 'N', "Orange-red - BRIGHT") },
+        { 608, (new Rgba32(253, 93, 53), 'O', "Orange - BRIGHT") },
+        { 500, (new Rgba32(4, 57, 53), 'P', "Blue Green - VY DK") },
+        { 502, (new Rgba32(91, 144, 113), 'Q', "Blue Green") },
+        { 699, (new Rgba32(7, 111, 33), 'R', "Green") },
+        { 701, (new Rgba32(85, 145, 70), 'S', "Green - LT") },
+        { 703, (new Rgba32(123, 181, 71), 'T', "Chartreuse") },
+        { 550, (new Rgba32(92, 24, 78), 'U', "Violet - VY DK") },
+        { 553, (new Rgba32(176, 103, 166), 'V', "Violet") },
+        { 435, (new Rgba32(184, 119, 72), 'W', "Brown - VY LT") },
+        { 437, (new Rgba32(250, 206, 173), 'X', "Tan - LT") },
+        { 445, (new Rgba32(255, 251, 139), 'Y', "Lemon - LT") },
+        { 208, (new Rgba32(162, 89, 165), 'Z', "Lavender - VY DK") },
+        { 210, (new Rgba32(195, 143, 192), 'a', "Lavender - MED") },
+        { 347, (new Rgba32(191, 45, 45), 'b', "Salmon - VY DK") },
+        { 350, (new Rgba32(224, 72, 72), 'c', "Coral - MED") },
+        { 352, (new Rgba32(253, 156, 151), 'd', "Coral - LT") },
+        { 829, (new Rgba32(126, 95, 33), 'e', "Golden Olive - VY DK") },
+        { 831, (new Rgba32(141, 126, 62), 'f', "Golden Olive - MED") }
     };
 
-    static readonly Dictionary<int, (Rgba32 color, char symbol)> DMCColors50 = new()
+    static readonly Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors64 = new()
     {
-        { 3713, (new Rgba32(255, 226, 226), 'A') },
-        { 761, (new Rgba32(255, 201, 201), 'B') },
-        { 760, (new Rgba32(245, 173, 173), 'C') },
-        { 3712, (new Rgba32(241, 135, 135), 'D') },
-        { 3328, (new Rgba32(227, 109, 109), 'E') },
-        { 347, (new Rgba32(191, 45, 45), 'F') },
-        { 817, (new Rgba32(187, 5, 31), 'G') },
-        { 814, (new Rgba32(123, 0, 27), 'H') },
-        { 820, (new Rgba32(14, 54, 92), 'I') },
-        { 939, (new Rgba32(27, 40, 83), 'J') },
-        { 310, (new Rgba32(0, 0, 0), 'K') },
-        { 5200, (new Rgba32(255, 255, 255), 'L') },
-        { 208, (new Rgba32(184, 121, 184), 'M') },
-        { 209, (new Rgba32(204, 132, 204), 'N') },
-        { 210, (new Rgba32(221, 160, 221), 'O') },
-        { 211, (new Rgba32(233, 186, 233), 'P') },
-        { 221, (new Rgba32(136, 62, 62), 'Q') },
-        { 223, (new Rgba32(186, 91, 91), 'R') },
-        { 224, (new Rgba32(255, 223, 213), 'S') },
-        { 225, (new Rgba32(255, 227, 227), 'T') },
-        { 300, (new Rgba32(111, 47, 0), 'U') },
-        { 301, (new Rgba32(179, 95, 43), 'V') },
-        { 302, (new Rgba32(255, 111, 79), 'W') },
-        { 307, (new Rgba32(255, 243, 85), 'X') },
-        { 309, (new Rgba32(111, 35, 42), 'Y') },
-        { 311, (new Rgba32(32, 55, 125), 'Z') },
-        { 312, (new Rgba32(42, 74, 137), 'a') },
-        { 315, (new Rgba32(129, 58, 62), 'b') },
-        { 316, (new Rgba32(183, 115, 127), 'c') },
-        { 317, (new Rgba32(198, 198, 198), 'd') },
-        { 318, (new Rgba32(171, 171, 171), 'e') },
-        { 321, (new Rgba32(199, 43, 59), 'f') },
-        { 322, (new Rgba32(50, 102, 124), 'g') },
-        { 333, (new Rgba32(92, 84, 148), 'h') },
-        { 334, (new Rgba32(115, 159, 196), 'i') },
-        { 335, (new Rgba32(238, 84, 110), 'j') },
-        { 336, (new Rgba32(37, 57, 77), 'k') },
-        { 340, (new Rgba32(173, 167, 199), 'l') },
-        { 341, (new Rgba32(173, 192, 214), 'm') },
-        { 349, (new Rgba32(210, 16, 53), 'n') },
-        { 350, (new Rgba32(224, 72, 72), 'o') },
-        { 351, (new Rgba32(233, 106, 103), 'p') },
-        { 352, (new Rgba32(253, 156, 151), 'q') },
-        { 353, (new Rgba32(254, 215, 204), 'r') },
-        { 355, (new Rgba32(152, 66, 54), 's') },
-        { 356, (new Rgba32(197, 94, 86), 't') },
-        { 367, (new Rgba32(97, 118, 82), 'u') },
-        { 368, (new Rgba32(163, 186, 143), 'v') },
-        { 369, (new Rgba32(215, 237, 204), 'w') }
+        { 5200, (new Rgba32(255, 255, 255), 'A', "White") },
+        { 150, (new Rgba32(207, 19, 19), 'B', "Red - BRIGHT") },
+        { 310, (new Rgba32(0, 0, 0), 'C', "Black") },
+        { 730, (new Rgba32(130, 120, 56), 'D', "Olive Green - VY DK") },
+        { 731, (new Rgba32(134, 124, 58), 'E', "Olive Green - DK") },
+        { 732, (new Rgba32(134, 126, 54), 'F', "Olive Green") },
+        { 733, (new Rgba32(159, 149, 100), 'G', "Olive Green - MED") },
+        { 734, (new Rgba32(187, 179, 123), 'H', "Olive Green - LT") },
+        { 740, (new Rgba32(255, 131, 19), 'I', "Tangerine") },
+        { 741, (new Rgba32(255, 163, 43), 'J', "Tangerine - MED") },
+        { 742, (new Rgba32(255, 211, 118), 'K', "Tangerine - LT") },
+        { 743, (new Rgba32(255, 224, 150), 'L', "Yellow - MED") },
+        { 744, (new Rgba32(255, 239, 172), 'M', "Yellow - PALE") },
+        { 745, (new Rgba32(255, 233, 173), 'N', "Yellow - LT PALE") },
+        { 823, (new Rgba32(31, 30, 51), 'O', "Blue - DK") },
+        { 824, (new Rgba32(57, 105, 135), 'P', "Blue - VY DK") },
+        { 825, (new Rgba32(72, 129, 161), 'Q', "Blue - DK") },
+        { 826, (new Rgba32(104, 161, 194), 'R', "Blue - MED") },
+        { 827, (new Rgba32(189, 221, 237), 'S', "Blue - VY LT") },
+        { 828, (new Rgba32(220, 237, 249), 'T', "Blue - ULT VY LT") },
+        { 600, (new Rgba32(222, 36, 61), 'U', "Cranberry - VY DK") },
+        { 601, (new Rgba32(255, 84, 120), 'V', "Cranberry - DK") },
+        { 602, (new Rgba32(255, 145, 172), 'W', "Cranberry - MED") },
+        { 603, (new Rgba32(255, 164, 182), 'X', "Cranberry") },
+        { 604, (new Rgba32(255, 194, 204), 'Y', "Cranberry - LT") },
+        { 605, (new Rgba32(255, 232, 232), 'Z', "Cranberry - VY LT") },
+        { 606, (new Rgba32(250, 50, 3), 'a', "Orange-red - BRIGHT") },
+        { 608, (new Rgba32(253, 93, 53), 'b', "Orange - BRIGHT") },
+        { 500, (new Rgba32(4, 57, 53), 'c', "Blue Green - VY DK") },
+        { 501, (new Rgba32(57, 111, 100), 'd', "Blue Green - DK") },
+        { 502, (new Rgba32(91, 144, 113), 'e', "Blue Green") },
+        { 503, (new Rgba32(123, 172, 148), 'f', "Blue Green - MED") },
+        { 504, (new Rgba32(196, 222, 204), 'g', "Blue Green - VY LT") },
+        { 699, (new Rgba32(7, 111, 33), 'h', "Green") },
+        { 700, (new Rgba32(0, 127, 55), 'i', "Green - BRIGHT") },
+        { 701, (new Rgba32(85, 145, 70), 'j', "Green - LT") },
+        { 702, (new Rgba32(0, 158, 96), 'k', "Kelly Green") },
+        { 703, (new Rgba32(123, 181, 71), 'l', "Chartreuse") },
+        { 704, (new Rgba32(0, 194, 108), 'm', "Chartreuse - BRIGHT") },
+        { 550, (new Rgba32(92, 24, 78), 'n', "Violet - VY DK") },
+        { 552, (new Rgba32(128, 58, 111), 'o', "Violet - MED") },
+        { 553, (new Rgba32(176, 103, 166), 'p', "Violet") },
+        { 554, (new Rgba32(228, 185, 209), 'q', "Violet - LT") },
+        { 435, (new Rgba32(184, 119, 72), 'r', "Brown - VY LT") },
+        { 436, (new Rgba32(198, 144, 96), 's', "Tan") },
+        { 437, (new Rgba32(250, 206, 173), 't', "Tan - LT") },
+        { 444, (new Rgba32(255, 239, 0), 'u', "Lemon - DK") },
+        { 445, (new Rgba32(255, 251, 139), 'v', "Lemon - LT") },
+        { 208, (new Rgba32(162, 89, 165), 'w', "Lavender - VY DK") },
+        { 209, (new Rgba32(174, 110, 184), 'x', "Lavender - DK") },
+        { 210, (new Rgba32(195, 143, 192), 'y', "Lavender - MED") },
+        { 211, (new Rgba32(227, 203, 227), 'z', "Lavender - LT") },
+        { 347, (new Rgba32(191, 45, 45), 'A', "Salmon - VY DK") },
+        { 349, (new Rgba32(210, 16, 53), 'B', "Coral - DK") },
+        { 350, (new Rgba32(224, 72, 72), 'C', "Coral - MED") },
+        { 351, (new Rgba32(233, 106, 103), 'D', "Coral") },
+        { 352, (new Rgba32(253, 156, 151), 'E', "Coral - LT") },
+        { 353, (new Rgba32(254, 215, 204), 'F', "Peach") },
+        { 829, (new Rgba32(126, 95, 33), 'G', "Golden Olive - VY DK") },
+        { 830, (new Rgba32(142, 118, 68), 'H', "Golden Olive - DK") },
+        { 831, (new Rgba32(141, 126, 62), 'I', "Golden Olive - MED") },
+        { 832, (new Rgba32(189, 162, 107), 'J', "Golden Olive") },
+        { 833, (new Rgba32(200, 174, 116), 'K', "Golden Olive - LT") },
+        { 834, (new Rgba32(219, 190, 127), 'L', "Golden Olive - VY LT") }
     };
 
     static void Main(string[] args)
@@ -124,15 +141,15 @@ class Program
             {
                 Console.WriteLine($"Processing {filePath}...");
                 ProcessImage(filePath, outputDirectory, DMCColors30, 80);
-                ProcessImage(filePath, outputDirectory, DMCColors50, 120);
-                ProcessImage(filePath, outputDirectory, DMCColors50, 180);
+                ProcessImage(filePath, outputDirectory, DMCColors64, 120);
+                ProcessImage(filePath, outputDirectory, DMCColors64, 180);
             }
         }
 
         Console.WriteLine("Processing complete.");
     }
 
-    static void ProcessImage(string inputPath, string outputDirectory, Dictionary<int, (Rgba32 color, char symbol)> DMCColors, int size)
+    static void ProcessImage(string inputPath, string outputDirectory, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors, int size)
     {
         // Load the image
         using Image<Rgba32> originalImage = Image.Load<Rgba32>(inputPath);
@@ -160,7 +177,7 @@ class Program
         CreatePDF(gridFilePath, legendFilePath, pdfFilePath);
     }
 
-    static Image<Rgba32> ConvertToCrossStitchPalette(Image<Rgba32> image, Dictionary<int, (Rgba32 color, char symbol)> DMCColors)
+    static Image<Rgba32> ConvertToCrossStitchPalette(Image<Rgba32> image, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
     {
         Image<Rgba32> result = new Image<Rgba32>(image.Width, image.Height);
 
@@ -177,7 +194,7 @@ class Program
         return result;
     }
 
-    static Rgba32 FindClosestColor(Rgba32 originalColor, Dictionary<int, (Rgba32 color, char symbol)> palette)
+    static Rgba32 FindClosestColor(Rgba32 originalColor, Dictionary<int, (Rgba32 color, char symbol, string name)> palette)
     {
         var closest = palette.Values.First();
         double closestDistance = ColorDistance(originalColor, closest.color);
@@ -203,7 +220,7 @@ class Program
         return Math.Sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
     }
 
-    static void CreateGridImage(Image<Rgba32> patternImage, string outputPath, Dictionary<int, (Rgba32 color, char symbol)> DMCColors)
+    static void CreateGridImage(Image<Rgba32> patternImage, string outputPath, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
     {
         int gridSize = 32;
         int width = patternImage.Width * gridSize;
@@ -230,7 +247,7 @@ class Program
         gridImage.Save(outputPath);
     }
 
-    static char GetSymbolForColor(Rgba32 color, Dictionary<int, (Rgba32 color, char symbol)> DMCColors)
+    static char GetSymbolForColor(Rgba32 color, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
     {
         foreach (var entry in DMCColors.Values)
         {
@@ -242,11 +259,11 @@ class Program
         return ' ';
     }
 
-    static void CreateLegendImage(Image<Rgba32> patternImage, string outputPath, Dictionary<int, (Rgba32 color, char symbol)> DMCColors)
+    static void CreateLegendImage(Image<Rgba32> patternImage, string outputPath, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
     {
         int gridSize = 32;
-        int fontSize = 24;
-        int columns = 3;
+        int fontSize = 20;
+        int columns = 2;
 
         // Gather unique colors from the pattern image
         HashSet<Rgba32> uniqueColors = new HashSet<Rgba32>();
@@ -281,11 +298,12 @@ class Program
                 int row = i / columns + 1; // +1 to account for the top row
                 var color = entry.Value.color;
                 var symbol = entry.Value.symbol;
+                var name = entry.Value.name;
                 var rect = new Rectangle(col * 300, row * gridSize, gridSize, gridSize);
 
                 ctx.Fill(color, rect);
                 ctx.DrawText(symbol.ToString(), font, new Rgba32(0, 0, 0), new PointF(col * 300 + 8, row * gridSize + 2));
-                ctx.DrawText($"{entry.Key} (#{color.ToHex()})", font, new Rgba32(0, 0, 0), new PointF(col * 300 + gridSize + 10, row * gridSize + 2));
+                ctx.DrawText($"{entry.Key} - {name}", font, new Rgba32(0, 0, 0), new PointF(col * 300 + gridSize + 10, row * gridSize + 2));
 
                 i++;
             }
@@ -352,5 +370,4 @@ class Program
 
         gfx.DrawImage(image, xOffset, yOffset, scaledWidth, scaledHeight);
     }
-
 }
