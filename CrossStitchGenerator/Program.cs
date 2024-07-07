@@ -2,15 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using PdfSharp.Drawing;
+using PdfSharp.Fonts;
+using PdfSharp.Pdf;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Drawing;
-using PdfSharp.Drawing;
-using PdfSharp.Pdf;
 
 class Program
 {
@@ -174,7 +173,7 @@ class Program
 
         // Create and save the PDF
         string pdfFilePath = System.IO.Path.Combine(outputDirectory, System.IO.Path.GetFileNameWithoutExtension(inputPath) + $"_{size}.pdf");
-        CreatePDF(gridFilePath, legendFilePath, pdfFilePath);
+        CreatePDF(gridFilePath, legendFilePath, pdfFilePath, System.IO.Path.GetFileNameWithoutExtension(inputPath).Replace('_', ' '));
     }
 
     static Image<Rgba32> ConvertToCrossStitchPalette(Image<Rgba32> image, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
@@ -244,17 +243,17 @@ class Program
             }
 
             // Draw center lines
-            ctx.DrawLine(new Rgba32(0, 0, 0), 1, new PointF(width / 2, 0), new PointF(width / 2, height));
-            ctx.DrawLine(new Rgba32(0, 0, 0), 1, new PointF(0, height / 2), new PointF(width, height / 2));
+            ctx.DrawLine(new Rgba32(0, 0, 0), 2, new PointF(width / 2, 0), new PointF(width / 2, height));
+            ctx.DrawLine(new Rgba32(0, 0, 0), 2, new PointF(0, height / 2), new PointF(width, height / 2));
         });
 
         gridImage.Save(outputPath);
 
         // Create and save quarter images
-        CreateQuarterImages(gridImage, outputDirectory);
+        CreateQuarterImages(gridImage, outputPath, outputDirectory);
     }
 
-    static void CreateQuarterImages(Image<Rgba32> gridImage, string outputPath)
+    static void CreateQuarterImages(Image<Rgba32> gridImage, string outputPath, string outputDirectory)
     {
         int halfWidth = gridImage.Width / 2;
         int halfHeight = gridImage.Height / 2;
@@ -262,21 +261,50 @@ class Program
         // Define regions for each quarter
         var regions = new[]
         {
-        new Rectangle(0, 0, halfWidth, halfHeight),
-        new Rectangle(halfWidth, 0, halfWidth, halfHeight),
-        new Rectangle(0, halfHeight, halfWidth, halfHeight),
-        new Rectangle(halfWidth, halfHeight, halfWidth, halfHeight)
-    };
+            new Rectangle(0, 0, halfWidth, halfHeight),
+            new Rectangle(halfWidth, 0, halfWidth, halfHeight),
+            new Rectangle(0, halfHeight, halfWidth, halfHeight),
+            new Rectangle(halfWidth, halfHeight, halfWidth, halfHeight)
+        };
 
         // Create quarter images
         for (int i = 0; i < regions.Length; i++)
         {
             using var quarterImage = gridImage.Clone(ctx => ctx.Crop(regions[i]).Resize(regions[i].Width * 2, regions[i].Height * 2));
-            quarterImage.Save(System.IO.Path.Combine(outputPath, $"quarter_{i + 1}.png"));
+
+            // Draw 10x10 grids on each quadrant
+            quarterImage.Mutate(ctx =>
+            {
+                int gridSize = 32; // Original grid size
+                int quarterGridSize = gridSize * 2; // Quarter images are twice the original size
+                int numGrids = quarterImage.Width / quarterGridSize;
+
+                // Draw outer border
+                ctx.Draw(Pens.Solid(Color.Black, 2.0f), new RectangleF(0, 0, quarterImage.Width, quarterImage.Height));
+
+                // Draw 10x10 grids and thicker borders
+                for (int y = 0; y < numGrids; y++)
+                {
+                    for (int x = 0; x < numGrids; x++)
+                    {
+                        var rect = new Rectangle(x * quarterGridSize, y * quarterGridSize, quarterGridSize, quarterGridSize);
+                        ctx.Draw(Pens.Solid(Color.Black, 1.0f), rect);
+
+                        // Draw thicker 10x10 border
+                        if (x % 10 == 0 && y % 10 == 0)
+                        {
+                            var thickBorderRect = new Rectangle(x * quarterGridSize, y * quarterGridSize, quarterGridSize * 10, quarterGridSize * 10);
+                            ctx.Draw(Pens.Solid(Color.Black, 3.0f), thickBorderRect);
+                        }
+                    }
+                }
+            });
+
+            quarterImage.Save(System.IO.Path.Combine(outputDirectory, $"quarter_{i + 1}.png"));
         }
     }
 
-    static void CreatePDF(string gridFilePath, string legendFilePath, string pdfFilePath)
+    static void CreatePDF(string gridFilePath, string legendFilePath, string pdfFilePath, string baseFileName)
     {
         using var document = new PdfDocument();
 
@@ -290,23 +318,26 @@ class Program
             File.Copy(gridFilePath, tempGridFilePath, true);
             File.Copy(legendFilePath, tempLegendFilePath, true);
 
-            // Add grid image page
+            // Add grid image page with title
             PdfPage gridPage = document.AddPage();
             using (XGraphics gfx = XGraphics.FromPdfPage(gridPage))
             {
                 XImage gridImage = XImage.FromFile(tempGridFilePath);
+                DrawTitle(gfx, baseFileName);
                 DrawImageCentered(gfx, gridImage, gridPage.Width, gridPage.Height);
             }
 
-            // Add legend image page
+            // Add legend image page with title
             PdfPage legendPage = document.AddPage();
             using (XGraphics gfx = XGraphics.FromPdfPage(legendPage))
             {
                 XImage legendImage = XImage.FromFile(tempLegendFilePath);
+                DrawTitle(gfx, "Legend");
                 DrawImageCentered(gfx, legendImage, legendPage.Width, legendPage.Height);
             }
 
-            // Add quarter images
+            // Add quarter images with titles
+            string[] quadrantNames = { "Top Left Quadrant", "Top Right Quadrant", "Bottom Left Quadrant", "Bottom Right Quadrant" };
             for (int i = 0; i < 4; i++)
             {
                 string quarterFilePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(gridFilePath), $"quarter_{i + 1}.png");
@@ -314,6 +345,7 @@ class Program
                 using (XGraphics gfx = XGraphics.FromPdfPage(quarterPage))
                 {
                     XImage quarterImage = XImage.FromFile(quarterFilePath);
+                    DrawTitle(gfx, quadrantNames[i]);
                     DrawImageCentered(gfx, quarterImage, quarterPage.Width, quarterPage.Height);
                 }
             }
@@ -327,6 +359,13 @@ class Program
             if (File.Exists(tempGridFilePath)) File.Delete(tempGridFilePath);
             if (File.Exists(tempLegendFilePath)) File.Delete(tempLegendFilePath);
         }
+    }
+
+    static void DrawTitle(XGraphics gfx, string title)
+    {
+        XFont font = new XFont("Times New Roman", 50);
+        XSize size = gfx.MeasureString(title, font);
+        gfx.DrawString(title, font, XBrushes.Black, new XPoint((gfx.PageSize.Width - size.Width) / 2, 60));
     }
 
     static void DrawImageCentered(XGraphics gfx, XImage image, double pageWidth, double pageHeight)
@@ -344,7 +383,7 @@ class Program
         double xOffset = (pageWidth - scaledWidth) / 2;
         double yOffset = (pageHeight - scaledHeight) / 2;
 
-        gfx.DrawImage(image, xOffset, yOffset, scaledWidth, scaledHeight);
+        gfx.DrawImage(image, xOffset, yOffset + 40, scaledWidth, scaledHeight); // Adjust yOffset to account for title
     }
 
     static char GetSymbolForColor(Rgba32 color, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
@@ -361,8 +400,8 @@ class Program
 
     static void CreateLegendImage(Image<Rgba32> patternImage, string outputPath, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
     {
-        int gridSize = 28;
-        int fontSize = 20;
+        int gridSize = 24;
+        int fontSize = 16;
         int columns = 2;
 
         // Gather unique colors from the pattern image
