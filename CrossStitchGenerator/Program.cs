@@ -116,7 +116,6 @@ class Program
         { 833, (new Rgba32(200, 174, 116), 'K', "Golden Olive - LT") },
         { 834, (new Rgba32(219, 190, 127), 'L', "Golden Olive - VY LT") }
     };
-
     static void Main(string[] args)
     {
         string inputDirectory = "./in/";
@@ -133,22 +132,32 @@ class Program
             Directory.CreateDirectory(outputDirectory);
         }
 
+        var images80x80 = new Dictionary<string, string>();
+        var images120x120 = new Dictionary<string, string>();
+        var images180x180 = new Dictionary<string, string>();
+
         foreach (string filePath in Directory.GetFiles(inputDirectory))
         {
             string extension = System.IO.Path.GetExtension(filePath).ToLower();
             if (extension == ".png" || extension == ".jpg" || extension == ".jpeg" || extension == ".webp")
             {
                 Console.WriteLine($"Processing {filePath}...");
-                ProcessImage(filePath, outputDirectory, DMCColors30, 80);
-                ProcessImage(filePath, outputDirectory, DMCColors64, 120);
-                ProcessImage(filePath, outputDirectory, DMCColors64, 180);
+                string filename = System.IO.Path.GetFileNameWithoutExtension(filePath);
+
+                images80x80[filename] = ProcessImage(filePath, outputDirectory, DMCColors30, 80);
+                images120x120[filename] = ProcessImage(filePath, outputDirectory, DMCColors64, 120);
+                images180x180[filename] = ProcessImage(filePath, outputDirectory, DMCColors64, 180);
             }
         }
+
+        //PrintImageData(images80x80, "images80x80");
+        //PrintImageData(images120x120, "images120x120");
+        //PrintImageData(images180x180, "images180x180");
 
         Console.WriteLine("Processing complete.");
     }
 
-    static void ProcessImage(string inputPath, string outputDirectory, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors, int size)
+    static string ProcessImage(string inputPath, string outputDirectory, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors, int size)
     {
         // Load the image
         using Image<Rgba32> originalImage = Image.Load<Rgba32>(inputPath);
@@ -174,7 +183,38 @@ class Program
         // Create and save the PDF
         string pdfFilePath = System.IO.Path.Combine(outputDirectory, System.IO.Path.GetFileNameWithoutExtension(inputPath) + $"_{size}.pdf");
         CreatePDF(gridFilePath, legendFilePath, pdfFilePath, System.IO.Path.GetFileNameWithoutExtension(inputPath).Replace('_', ' '));
+
+        // Convert the pattern image to string data
+        return ConvertPatternToString(patternImage, DMCColors);
     }
+
+    static string ConvertPatternToString(Image<Rgba32> patternImage, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
+    {
+        var result = new System.Text.StringBuilder();
+        for (int y = 0; y < patternImage.Height; y++)
+        {
+            for (int x = 0; x < patternImage.Width; x++)
+            {
+                var color = patternImage[x, y];
+                var symbol = GetSymbolForColor(color, DMCColors);
+                result.Append(symbol);
+            }
+            result.AppendLine();
+        }
+        return result.ToString();
+    }
+
+    static void PrintImageData(Dictionary<string, string> imageData, string dictionaryName)
+    {
+        Console.WriteLine($"Dictionary<string, string> {dictionaryName} = new Dictionary<string, string>() {{");
+        foreach (var entry in imageData)
+        {
+            Console.WriteLine($"   {{ \"{entry.Key}\", \"{entry.Value.Replace("\n", "\\n")}\" }},");
+        }
+        Console.WriteLine("};");
+    }
+
+    // Existing methods for ConvertToCrossStitchPalette, FindClosestColor, ColorDistance, CreateGridImage, CreateQuarterImages, CreatePDF, DrawTitle, DrawImageCentered, GetSymbolForColor, and CreateLegendImage.
 
     static Image<Rgba32> ConvertToCrossStitchPalette(Image<Rgba32> image, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
     {
