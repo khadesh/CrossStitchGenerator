@@ -166,7 +166,7 @@ class Program
 
         // Create and save the grid image
         string gridFilePath = System.IO.Path.Combine(outputDirectory, System.IO.Path.GetFileNameWithoutExtension(inputPath) + $"_grid_{size}.png");
-        CreateGridImage(patternImage, gridFilePath, DMCColors);
+        CreateGridImage(patternImage, gridFilePath, DMCColors, outputDirectory);
 
         // Create and save the legend image
         string legendFilePath = System.IO.Path.Combine(outputDirectory, System.IO.Path.GetFileNameWithoutExtension(inputPath) + $"_legend_{size}.png");
@@ -220,12 +220,12 @@ class Program
         return Math.Sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
     }
 
-    static void CreateGridImage(Image<Rgba32> patternImage, string outputPath, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
+    static void CreateGridImage(Image<Rgba32> patternImage, string outputPath, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors, string outputDirectory)
     {
         int gridSize = 32;
         int width = patternImage.Width * gridSize;
         int height = patternImage.Height * gridSize;
-        var font = SystemFonts.CreateFont("Arial", 24);
+        var font = SystemFonts.CreateFont("Arial", 20);
 
         using var gridImage = new Image<Rgba32>(width, height);
         gridImage.Mutate(ctx =>
@@ -242,9 +242,109 @@ class Program
                     ctx.DrawText(symbol.ToString(), font, new Rgba32(0, 0, 0), new PointF(x * gridSize + 8, y * gridSize + 2));
                 }
             }
+
+            // Draw center lines
+            ctx.DrawLine(new Rgba32(0, 0, 0), 1, new PointF(width / 2, 0), new PointF(width / 2, height));
+            ctx.DrawLine(new Rgba32(0, 0, 0), 1, new PointF(0, height / 2), new PointF(width, height / 2));
         });
 
         gridImage.Save(outputPath);
+
+        // Create and save quarter images
+        CreateQuarterImages(gridImage, outputDirectory);
+    }
+
+    static void CreateQuarterImages(Image<Rgba32> gridImage, string outputPath)
+    {
+        int halfWidth = gridImage.Width / 2;
+        int halfHeight = gridImage.Height / 2;
+
+        // Define regions for each quarter
+        var regions = new[]
+        {
+        new Rectangle(0, 0, halfWidth, halfHeight),
+        new Rectangle(halfWidth, 0, halfWidth, halfHeight),
+        new Rectangle(0, halfHeight, halfWidth, halfHeight),
+        new Rectangle(halfWidth, halfHeight, halfWidth, halfHeight)
+    };
+
+        // Create quarter images
+        for (int i = 0; i < regions.Length; i++)
+        {
+            using var quarterImage = gridImage.Clone(ctx => ctx.Crop(regions[i]).Resize(regions[i].Width * 2, regions[i].Height * 2));
+            quarterImage.Save(System.IO.Path.Combine(outputPath, $"quarter_{i + 1}.png"));
+        }
+    }
+
+    static void CreatePDF(string gridFilePath, string legendFilePath, string pdfFilePath)
+    {
+        using var document = new PdfDocument();
+
+        // Create temporary files for the images
+        string tempGridFilePath = System.IO.Path.GetTempFileName();
+        string tempLegendFilePath = System.IO.Path.GetTempFileName();
+
+        try
+        {
+            // Copy the images to the temporary files
+            File.Copy(gridFilePath, tempGridFilePath, true);
+            File.Copy(legendFilePath, tempLegendFilePath, true);
+
+            // Add grid image page
+            PdfPage gridPage = document.AddPage();
+            using (XGraphics gfx = XGraphics.FromPdfPage(gridPage))
+            {
+                XImage gridImage = XImage.FromFile(tempGridFilePath);
+                DrawImageCentered(gfx, gridImage, gridPage.Width, gridPage.Height);
+            }
+
+            // Add legend image page
+            PdfPage legendPage = document.AddPage();
+            using (XGraphics gfx = XGraphics.FromPdfPage(legendPage))
+            {
+                XImage legendImage = XImage.FromFile(tempLegendFilePath);
+                DrawImageCentered(gfx, legendImage, legendPage.Width, legendPage.Height);
+            }
+
+            // Add quarter images
+            for (int i = 0; i < 4; i++)
+            {
+                string quarterFilePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(gridFilePath), $"quarter_{i + 1}.png");
+                PdfPage quarterPage = document.AddPage();
+                using (XGraphics gfx = XGraphics.FromPdfPage(quarterPage))
+                {
+                    XImage quarterImage = XImage.FromFile(quarterFilePath);
+                    DrawImageCentered(gfx, quarterImage, quarterPage.Width, quarterPage.Height);
+                }
+            }
+
+            // Save PDF document
+            document.Save(pdfFilePath);
+        }
+        finally
+        {
+            // Clean up temporary files
+            if (File.Exists(tempGridFilePath)) File.Delete(tempGridFilePath);
+            if (File.Exists(tempLegendFilePath)) File.Delete(tempLegendFilePath);
+        }
+    }
+
+    static void DrawImageCentered(XGraphics gfx, XImage image, double pageWidth, double pageHeight)
+    {
+        double imageWidth = image.PixelWidth;
+        double imageHeight = image.PixelHeight;
+
+        // Calculate scaling factor to maintain aspect ratio
+        double scalingFactor = Math.Min(pageWidth / imageWidth, pageHeight / imageHeight);
+
+        double scaledWidth = imageWidth * scalingFactor;
+        double scaledHeight = imageHeight * scalingFactor;
+
+        // Calculate offsets to center the image
+        double xOffset = (pageWidth - scaledWidth) / 2;
+        double yOffset = (pageHeight - scaledHeight) / 2;
+
+        gfx.DrawImage(image, xOffset, yOffset, scaledWidth, scaledHeight);
     }
 
     static char GetSymbolForColor(Rgba32 color, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
@@ -261,7 +361,7 @@ class Program
 
     static void CreateLegendImage(Image<Rgba32> patternImage, string outputPath, Dictionary<int, (Rgba32 color, char symbol, string name)> DMCColors)
     {
-        int gridSize = 32;
+        int gridSize = 28;
         int fontSize = 20;
         int columns = 2;
 
@@ -310,64 +410,5 @@ class Program
         });
 
         legendImage.Save(outputPath);
-    }
-
-    static void CreatePDF(string gridFilePath, string legendFilePath, string pdfFilePath)
-    {
-        using var document = new PdfDocument();
-
-        // Create temporary files for the images
-        string tempGridFilePath = System.IO.Path.GetTempFileName();
-        string tempLegendFilePath = System.IO.Path.GetTempFileName();
-
-        try
-        {
-            // Copy the images to the temporary files
-            File.Copy(gridFilePath, tempGridFilePath, true);
-            File.Copy(legendFilePath, tempLegendFilePath, true);
-
-            // Add grid image page
-            PdfPage gridPage = document.AddPage();
-            using (XGraphics gfx = XGraphics.FromPdfPage(gridPage))
-            {
-                XImage gridImage = XImage.FromFile(tempGridFilePath);
-                DrawImageCentered(gfx, gridImage, gridPage.Width, gridPage.Height);
-            }
-
-            // Add legend image page
-            PdfPage legendPage = document.AddPage();
-            using (XGraphics gfx = XGraphics.FromPdfPage(legendPage))
-            {
-                XImage legendImage = XImage.FromFile(tempLegendFilePath);
-                DrawImageCentered(gfx, legendImage, legendPage.Width, legendPage.Height);
-            }
-
-            // Save PDF document
-            document.Save(pdfFilePath);
-        }
-        finally
-        {
-            // Clean up temporary files
-            if (File.Exists(tempGridFilePath)) File.Delete(tempGridFilePath);
-            if (File.Exists(tempLegendFilePath)) File.Delete(tempLegendFilePath);
-        }
-    }
-
-    static void DrawImageCentered(XGraphics gfx, XImage image, double pageWidth, double pageHeight)
-    {
-        double imageWidth = image.PixelWidth;
-        double imageHeight = image.PixelHeight;
-
-        // Calculate scaling factor to maintain aspect ratio
-        double scalingFactor = Math.Min(pageWidth / imageWidth, pageHeight / imageHeight);
-
-        double scaledWidth = imageWidth * scalingFactor;
-        double scaledHeight = imageHeight * scalingFactor;
-
-        // Calculate offsets to center the image
-        double xOffset = (pageWidth - scaledWidth) / 2;
-        double yOffset = (pageHeight - scaledHeight) / 2;
-
-        gfx.DrawImage(image, xOffset, yOffset, scaledWidth, scaledHeight);
     }
 }
